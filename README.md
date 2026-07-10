@@ -91,6 +91,11 @@ study-mcp/
 | `save_flashcards_tool` | Save Q&A flashcards to Notion |
 | `create_quiz_tool` | Create an interactive quiz page in Notion (open or multiple-choice, answer in Notion then paste back for checking) |
 
+The three Notion tools also accept `related_pages` (a list of
+`notion_url` values from earlier saves in the same conversation) to
+link a new page to related materials via Notion's native mentions -
+see [`docs/NOTION_SETUP.md`](docs/NOTION_SETUP.md).
+
 The server also exposes an MCP **resource** (`study://materials`, the current library as JSON) and a **prompt** (`study_prompt`, a ready-made study-plan workflow for any material).
 
 ---

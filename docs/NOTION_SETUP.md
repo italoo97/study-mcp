@@ -13,6 +13,22 @@ o Claude conferir.
 Isso é opcional — sem token configurado, o resto do servidor
 (ingest, busca, tools de material) funciona normalmente.
 
+## Linkando materiais relacionados
+
+As três tools aceitam um parâmetro opcional `related_pages`: uma
+lista de `notion_url` de páginas já salvas antes **na mesma
+conversa**. Se você passar isso, a página nova ganha uma seção "🔗
+Materiais relacionados" com links clicáveis de verdade (usando o
+recurso nativo de menção do Notion), e o Notion mostra
+automaticamente o link reverso ("N Mentions") na página mencionada —
+é o equivalente ao `[[link]]` bidirecional do Obsidian, só que dentro
+do Notion.
+
+Limitação: isso não é uma busca automática por tudo que você já
+salvou — o Claude só consegue linkar páginas cujo `notion_url` ele já
+viu antes nessa mesma conversa (retornado pelas próprias tools ao
+salvar).
+
 ## 1. Criar a integração no Notion
 
 1. Acesse [notion.so/my-integrations](https://www.notion.so/my-integrations)

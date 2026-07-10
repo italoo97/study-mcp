@@ -11,6 +11,7 @@ _HEADING_RE = re.compile(r'^(#{1,3})\s+(.*)$')
 _BULLET_RE = re.compile(r'^[-*]\s+(.*)$')
 _NUMBERED_RE = re.compile(r'^\d+\.\s+(.*)$')
 _HEADING_TYPES = {1: 'heading_1', 2: 'heading_2', 3: 'heading_3'}
+_PAGE_ID_RE = re.compile(r'([0-9a-fA-F]{32})(?:[?#].*)?$')
 
 
 def _rich_text(text: str) -> list[dict[str, object]]:
@@ -82,6 +83,55 @@ def _markdown_blocks(text: str) -> list[dict[str, object]]:
                 'type': 'paragraph',
                 'paragraph': {'rich_text': _inline_rich_text(line)},
             })
+    return blocks
+
+
+def _extract_page_id(notion_url: str) -> str | None:
+    match = _PAGE_ID_RE.search(notion_url.strip())
+    return match.group(1) if match else None
+
+
+def _related_materials_blocks(
+    related_pages: list[str] | None,
+) -> list[dict[str, object]]:
+    # NOTE: relies on the caller passing notion_url values it already
+    # saw earlier in the same conversation - the server has no way to
+    # look up existing pages by material (the old query-a-database
+    # endpoint isn't exposed by this SDK under the pinned API
+    # version). Upgrade path: query-a-data-source once the rest of
+    # the integration moves to the 2025-09-03 data source model.
+    if not related_pages:
+        return []
+    ids = [pid for url in related_pages if (pid := _extract_page_id(url))]
+    if not ids:
+        return []
+
+    blocks: list[dict[str, object]] = [
+        {
+            'type': 'callout',
+            'callout': {
+                'rich_text': _rich_text('Materiais relacionados'),
+                'icon': {'type': 'emoji', 'emoji': '🔗'},
+                'color': 'gray_background',
+            },
+        }
+    ]
+    for page_id in ids:
+        blocks.append({
+            'type': 'bulleted_list_item',
+            'bulleted_list_item': {
+                'rich_text': [
+                    {
+                        'type': 'mention',
+                        'mention': {
+                            'type': 'page',
+                            'page': {'id': page_id},
+                        },
+                    }
+                ]
+            },
+        })
+    blocks.append({'type': 'divider', 'divider': {}})
     return blocks
 
 
@@ -246,6 +296,7 @@ class NotionService:
         material_name: str,
         summary: str,
         tags: list[str] | None = None,
+        related_pages: list[str] | None = None,
     ) -> dict[str, str]:
         if not settings.NOTION_DATABASE_ID:
             return {'error': 'NOTION_DATABASE_ID is not configured.'}
@@ -270,7 +321,11 @@ class NotionService:
                 'color': 'blue_background',
             },
         }
-        body_blocks = [header, *_markdown_blocks(summary)]
+        body_blocks = [
+            header,
+            *_related_materials_blocks(related_pages),
+            *_markdown_blocks(summary),
+        ]
         page = client.pages.create(
             parent={'database_id': settings.NOTION_DATABASE_ID},
             properties=properties,
@@ -298,6 +353,7 @@ class NotionService:
         material_id: str,
         material_name: str,
         flashcards: list[dict[str, str]],
+        related_pages: list[str] | None = None,
     ) -> dict[str, str | int]:
         if not settings.NOTION_DATABASE_ID:
             return {'error': 'NOTION_DATABASE_ID is not configured.'}
@@ -309,7 +365,10 @@ class NotionService:
             'Material': {'rich_text': _rich_text(material_id)},
         }
 
-        body_blocks = _flashcard_blocks(flashcards)
+        body_blocks = [
+            *_related_materials_blocks(related_pages),
+            *_flashcard_blocks(flashcards),
+        ]
         page = client.pages.create(
             parent={'database_id': settings.NOTION_DATABASE_ID},
             properties=properties,
@@ -333,6 +392,7 @@ class NotionService:
         material_id: str,
         material_name: str,
         questions: list[dict[str, object]],
+        related_pages: list[str] | None = None,
     ) -> dict[str, str | int]:
         if not settings.NOTION_DATABASE_ID:
             return {'error': 'NOTION_DATABASE_ID is not configured.'}
@@ -344,7 +404,10 @@ class NotionService:
             'Material': {'rich_text': _rich_text(material_id)},
         }
 
-        body_blocks = _quiz_blocks(questions)
+        body_blocks = [
+            *_related_materials_blocks(related_pages),
+            *_quiz_blocks(questions),
+        ]
         page = client.pages.create(
             parent={'database_id': settings.NOTION_DATABASE_ID},
             properties=properties,
@@ -372,6 +435,7 @@ def save_summary_tool(
     material_name: str,
     summary: str,
     tags: list[str] | None = None,
+    related_pages: list[str] | None = None,
 ) -> dict[str, str]:
     """
     Save a study summary to Notion.
@@ -381,14 +445,25 @@ def save_summary_tool(
     (create_quiz_tool) for the same material - ask the user first,
     don't create them unprompted.
 
+    If this conversation already saved Notion pages for related
+    materials (their notion_url is in earlier tool results), pass
+    those URLs in related_pages to link this new page to them - it
+    adds a "Materiais relacionados" section with clickable links, and
+    Notion automatically shows the reverse link ("N Mentions") on the
+    linked pages too.
+
     Args:
         material_id: ID of the ingested material.
         material_name: Human-readable name for the material.
         summary: The summary text to save.
         tags: Optional list of topic tags.
+        related_pages: Optional list of notion_url values (from
+            earlier save_summary_tool/save_flashcards_tool/
+            create_quiz_tool results in this conversation) to link
+            to as related materials.
     """
     return _notion_service.save_summary(
-        material_id, material_name, summary, tags
+        material_id, material_name, summary, tags, related_pages
     )
 
 
@@ -396,6 +471,7 @@ def save_flashcards_tool(
     material_id: str,
     material_name: str,
     flashcards: list[dict[str, str]],
+    related_pages: list[str] | None = None,
 ) -> dict[str, str | int]:
     """
     Save flashcards to Notion.
@@ -404,9 +480,12 @@ def save_flashcards_tool(
         material_id: ID of the ingested material.
         material_name: Human-readable name for the material.
         flashcards: List of dicts with 'question' and 'answer' keys.
+        related_pages: Optional list of notion_url values (from
+            earlier tool results in this conversation) to link to as
+            related materials - see save_summary_tool for details.
     """
     return _notion_service.save_flashcards(
-        material_id, material_name, flashcards
+        material_id, material_name, flashcards, related_pages
     )
 
 
@@ -414,6 +493,7 @@ def create_quiz_tool(
     material_id: str,
     material_name: str,
     questions: list[dict[str, object]],
+    related_pages: list[str] | None = None,
 ) -> dict[str, str | int]:
     """
     Create an interactive quiz page in Notion for active recall. The
@@ -438,5 +518,10 @@ def create_quiz_tool(
         material_id: ID of the ingested material.
         material_name: Human-readable name for the material.
         questions: List of question dicts as described above.
+        related_pages: Optional list of notion_url values (from
+            earlier tool results in this conversation) to link to as
+            related materials - see save_summary_tool for details.
     """
-    return _notion_service.create_quiz(material_id, material_name, questions)
+    return _notion_service.create_quiz(
+        material_id, material_name, questions, related_pages
+    )

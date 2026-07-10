@@ -57,7 +57,14 @@ mcp = FastMCP(
         'everything ingested, get_material_overview_tool to preview '
         'a material before summarizing, study_stats_tool for a study '
         'dashboard, and delete_material_tool to remove outdated '
-        'materials.'
+        'materials. '
+        'save_summary_tool, save_flashcards_tool and create_quiz_tool '
+        'all accept related_pages: a list of notion_url values from '
+        'earlier saves in this same conversation. If the current '
+        'material is related to one already saved to Notion earlier '
+        'in this conversation, pass its notion_url in related_pages '
+        'so the new page links to it (Notion shows the backlink '
+        'automatically on the other page too).'
     ),
     lifespan=app_lifespan,
 )
