@@ -174,17 +174,22 @@ Set `EMBEDDING_MODEL` to any [sentence-transformers](https://sbert.net) compatib
 
 ## 📋 Notion Setup (optional)
 
-Only needed for `save_summary_tool` and `save_flashcards_tool`.
+Only needed for `save_summary_tool` and `save_flashcards_tool`. Full
+walkthrough (including a script that creates the database for you)
+in [`docs/NOTION_SETUP.md`](docs/NOTION_SETUP.md).
+
+Quick version:
 
 1. Create an integration at [notion.so/my-integrations](https://www.notion.so/my-integrations)
-2. Create a database with these properties:
-   - `Name` → Title
-   - `Type` → Select (`Summary`, `Flashcards`)
-   - `Material` → Rich text
-   - `Content` → Rich text
-   - `Tags` → Multi-select
-3. Share the database with your integration
-4. Set `NOTION_TOKEN` and `NOTION_DATABASE_ID` in `.env`
+2. Create the database — either run
+   `poetry run python scripts/create_notion_database.py <parent_page_id>`
+   (creates it with the right schema and shares it automatically), or
+   create it by hand with these properties: `Name` (Title), `Type`
+   (Select), `Material` (Rich text), `Content` (Rich text), `Tags`
+   (Multi-select) — then share it with your integration manually.
+3. Set `NOTION_TOKEN` and `NOTION_DATABASE_ID` in the `env` block of
+   your Claude Desktop config (**not** `.env` — see
+   [`docs/claude_desktop_config.json`](docs/claude_desktop_config.json)).
 
 ---
 

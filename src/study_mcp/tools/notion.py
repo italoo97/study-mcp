@@ -57,7 +57,14 @@ class NotionService:
         if self._client is None:
             if not settings.NOTION_TOKEN:
                 raise RuntimeError('NOTION_TOKEN is not configured.')
-            self._client = Client(auth=settings.NOTION_TOKEN)
+            # NOTE: pinned to the pre-2025-09-03 API, where pages are
+            # parented directly by database_id. From 2025-09-03 onward
+            # Notion requires a data_source_id instead (databases can
+            # hold multiple data sources) - out of scope for this
+            # single-database integration.
+            self._client = Client(
+                auth=settings.NOTION_TOKEN, notion_version='2022-06-28'
+            )
         return self._client
 
     def save_summary(
