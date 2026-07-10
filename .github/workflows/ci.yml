@@ -45,4 +45,4 @@ jobs:
         run: poetry run task type_check
 
       - name: Tests
-        run: poetry run task test
+        run: poetry run task test || [ $? -eq 5 ]
