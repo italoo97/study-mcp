@@ -115,5 +115,40 @@ class ChromaRepository:
                 }
         return list(seen.values())
 
+    def delete_material(self, material_id: str) -> int:
+        collection = self._get_collection()
+        where: Where = {'material_id': material_id}
+        existing = collection.get(where=where, include=[])
+        ids = existing['ids']
+        if ids:
+            collection.delete(ids=ids)
+        return len(ids)
+
+    def get_chunks_by_material(
+        self, material_id: str
+    ) -> list[dict[str, str | int]]:
+        collection = self._get_collection()
+        where: Where = {'material_id': material_id}
+        results = collection.get(
+            where=where,
+            include=['documents', 'metadatas'],
+        )
+
+        documents = results['documents']
+        metadatas = results['metadatas']
+        if documents is None or metadatas is None:
+            return []
+
+        chunks: list[dict[str, str | int]] = [
+            {
+                'text': doc,
+                'source': str(meta.get('source', '')),
+                'chunk_index': int(meta.get('chunk_index', 0)),  # type: ignore[arg-type]
+            }
+            for doc, meta in zip(documents, metadatas)
+        ]
+        chunks.sort(key=lambda c: int(c['chunk_index']))
+        return chunks
+
 
 chroma_repository = ChromaRepository()

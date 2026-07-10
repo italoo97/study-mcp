@@ -24,6 +24,12 @@ class VectorRepository(Protocol):
 
     def list_materials(self) -> list[dict[str, str]]: ...
 
+    def delete_material(self, material_id: str) -> int: ...
+
+    def get_chunks_by_material(
+        self, material_id: str
+    ) -> list[dict[str, str | int]]: ...
+
 
 repository: Any
 

@@ -6,9 +6,14 @@ from mcp.server.fastmcp import FastMCP
 
 from study_mcp.core.embeddings import embedding_engine
 from study_mcp.db import repository
-from study_mcp.tools.help import help_tool
 from study_mcp.tools.ingest import ingest_file_tool, ingest_text_tool
 from study_mcp.tools.list_materials import list_materials_tool
+from study_mcp.tools.materials import (
+    delete_material_tool,
+    generate_quiz_context_tool,
+    get_material_overview_tool,
+    study_stats_tool,
+)
 from study_mcp.tools.notion import save_flashcards_tool, save_summary_tool
 from study_mcp.tools.search import search_tool
 
@@ -23,10 +28,9 @@ mcp = FastMCP(
     name='study-mcp',
     instructions=(
         'You are a study assistant powered by study-mcp. '
-        'You can ingest study materials (PDF, DOCX, PPTX, HTML, images), '
-        'search them semantically, generate summaries and flashcards, '
-        'and save everything to Notion. '
-        'Use help_tool to see all available tools and how to call them. '
+        'You can ingest study materials and video transcripts, '
+        'search them semantically, generate quiz context, summaries '
+        'and flashcards, and save everything to Notion. '
         'Always call list_materials_tool first to check what is already '
         'indexed before ingesting new files.'
     ),
@@ -39,7 +43,10 @@ mcp.tool()(search_tool)
 mcp.tool()(list_materials_tool)
 mcp.tool()(save_summary_tool)
 mcp.tool()(save_flashcards_tool)
-mcp.tool()(help_tool)
+mcp.tool()(delete_material_tool)
+mcp.tool()(get_material_overview_tool)
+mcp.tool()(generate_quiz_context_tool)
+mcp.tool()(study_stats_tool)
 
 
 @mcp.resource('study://materials')

@@ -153,5 +153,37 @@ class PgVectorRepository:
             for r in rows
         ]
 
+    def delete_material(self, material_id: str) -> int:
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                'DELETE FROM study_chunks WHERE material_id = %s',
+                (material_id,),
+            )
+            return int(cur.rowcount)
+
+    def get_chunks_by_material(
+        self, material_id: str
+    ) -> list[dict[str, str | int]]:
+        conn = self._get_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                'SELECT content, source, chunk_index '
+                'FROM study_chunks '
+                'WHERE material_id = %s '
+                'ORDER BY chunk_index',
+                (material_id,),
+            )
+            rows = cur.fetchall()
+
+        return [
+            {
+                'text': str(r['content']),
+                'source': str(r['source']),
+                'chunk_index': int(r['chunk_index']),
+            }
+            for r in rows
+        ]
+
 
 pgvector_repository = PgVectorRepository()
