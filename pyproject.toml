@@ -107,8 +107,15 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "--cov=study_mcp --cov-report=term-missing --cov-fail-under=0"
+addopts = "--cov=study_mcp --cov-report=term-missing --cov-fail-under=80"
 
+[tool.coverage.run]
+# Both require a live external service (Postgres+pgvector, Notion API)
+# to test meaningfully - no fake/mock is worth building for them yet.
+omit = [
+    "src/study_mcp/db/pgvector.py",
+    "src/study_mcp/tools/notion.py",
+]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
