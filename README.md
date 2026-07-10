@@ -23,6 +23,22 @@ Everything runs locally by default (ChromaDB + HuggingFace embeddings). Set a si
 
 ---
 
+## 🧰 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Language | Python 3.13 |
+| MCP server | [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) (FastMCP) |
+| Embeddings | [sentence-transformers](https://sbert.net) + HuggingFace models (local inference, PyTorch) |
+| Vector stores | [ChromaDB](https://www.trychroma.com) (local) · [pgvector](https://github.com/pgvector/pgvector) on Supabase/Postgres (cloud) |
+| Document parsing | [Docling](https://github.com/docling-project/docling) (PDF, DOCX, PPTX, HTML, images) + native SRT/VTT parser |
+| Integrations | [Notion API](https://developers.notion.com) (`notion-client`) |
+| Configuration | pydantic-settings (typed, env-based) |
+| Tooling | Poetry · pytest (+coverage) · ruff · mypy `--strict` · pre-commit · commitizen |
+| CI | GitHub Actions (lint, type check, tests on every push/PR) |
+
+---
+
 ## 🏗️ Architecture
 
 ```
