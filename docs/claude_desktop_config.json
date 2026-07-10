@@ -13,13 +13,13 @@
       "env": {
         "EMBEDDING_MODEL": "intfloat/multilingual-e5-small",
         "EMBEDDING_DIM": "384",
-        "CHROMA_PATH": "./chroma_db",
+        "CHROMA_PATH": "/ABSOLUTE/PATH/TO/study-mcp/chroma_db",
         "CHROMA_COLLECTION": "study_chunks",
         "CHUNK_SIZE": "512",
         "CHUNK_OVERLAP": "64",
-        "NOTION_TOKEN": "secret_...",
-        "NOTION_DATABASE_ID": "your-database-id-here",
-        "DATABASE_URL": ""
+        "DATABASE_URL": "",
+        "NOTION_TOKEN": "",
+        "NOTION_DATABASE_ID": ""
       }
     }
   }
