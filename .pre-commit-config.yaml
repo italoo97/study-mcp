@@ -6,8 +6,11 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.20.2
+  - repo: local
     hooks:
       - id: mypy
+        name: mypy
+        entry: poetry run mypy
+        language: system
+        types: [python]
         args: [--ignore-missing-imports]
