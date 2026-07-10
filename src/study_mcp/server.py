@@ -7,7 +7,7 @@ from mcp.server.fastmcp import FastMCP
 from study_mcp.core.embeddings import embedding_engine
 from study_mcp.db import repository
 from study_mcp.tools.help import help_tool
-from study_mcp.tools.ingest import ingest_file_tool
+from study_mcp.tools.ingest import ingest_file_tool, ingest_text_tool
 from study_mcp.tools.list_materials import list_materials_tool
 from study_mcp.tools.notion import save_flashcards_tool, save_summary_tool
 from study_mcp.tools.search import search_tool
@@ -34,6 +34,7 @@ mcp = FastMCP(
 )
 
 mcp.tool()(ingest_file_tool)
+mcp.tool()(ingest_text_tool)
 mcp.tool()(search_tool)
 mcp.tool()(list_materials_tool)
 mcp.tool()(save_summary_tool)
