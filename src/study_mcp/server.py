@@ -16,7 +16,11 @@ from study_mcp.tools.materials import (
     get_material_overview_tool,
     study_stats_tool,
 )
-from study_mcp.tools.notion import save_flashcards_tool, save_summary_tool
+from study_mcp.tools.notion import (
+    create_quiz_tool,
+    save_flashcards_tool,
+    save_summary_tool,
+)
 from study_mcp.tools.search import search_tool
 
 logging.basicConfig(
@@ -38,8 +42,9 @@ mcp = FastMCP(
     instructions=(
         'You are a study assistant powered by study-mcp. '
         'You can ingest study materials and video transcripts, '
-        'search them semantically, generate quiz context, summaries '
-        'and flashcards, and save everything to Notion. '
+        'search them semantically, generate quiz context, summaries, '
+        'flashcards and interactive Notion quizzes the user can '
+        'answer directly in Notion. '
         'Always call list_materials_tool first to check what is already '
         'indexed before ingesting new files.'
     ),
@@ -52,6 +57,7 @@ mcp.tool()(search_tool)
 mcp.tool()(list_materials_tool)
 mcp.tool()(save_summary_tool)
 mcp.tool()(save_flashcards_tool)
+mcp.tool()(create_quiz_tool)
 mcp.tool()(delete_material_tool)
 mcp.tool()(get_material_overview_tool)
 mcp.tool()(generate_quiz_context_tool)

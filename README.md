@@ -89,6 +89,7 @@ study-mcp/
 | `delete_material_tool` | Remove a material and all of its chunks |
 | `save_summary_tool` | Save a summary to Notion |
 | `save_flashcards_tool` | Save Q&A flashcards to Notion |
+| `create_quiz_tool` | Create an interactive quiz page in Notion (open or multiple-choice, answer in Notion then paste back for checking) |
 
 The server also exposes an MCP **resource** (`study://materials`, the current library as JSON) and a **prompt** (`study_prompt`, a ready-made study-plan workflow for any material).
 

@@ -23,6 +23,7 @@ _SCHEMA: dict[str, object] = {
             'options': [
                 {'name': 'Summary', 'color': 'blue'},
                 {'name': 'Flashcards', 'color': 'green'},
+                {'name': 'Quiz', 'color': 'purple'},
             ]
         }
     },

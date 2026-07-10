@@ -1,9 +1,14 @@
 # Configurando a integração com Notion
 
-O `study-mcp` pode salvar resumos (`save_summary_tool`) e flashcards
-(`save_flashcards_tool`) num database do Notion, com a página
-renderizada de forma legível (parágrafos pro resumo, blocos toggle
-clicáveis pergunta→resposta pros flashcards).
+O `study-mcp` pode salvar no Notion resumos (`save_summary_tool`),
+flashcards (`save_flashcards_tool`) e quizzes interativos
+(`create_quiz_tool`), com a página renderizada de forma legível:
+parágrafos pro resumo, blocos toggle clicáveis pergunta→resposta
+pros flashcards, e pro quiz — checkbox nativo pra múltipla escolha
+ou espaço em branco pra resposta aberta, com a resposta certa
+escondida num toggle até você conferir. A ideia do quiz é responder
+direto no Notion e depois colar suas respostas de volta no chat pra
+o Claude conferir.
 
 Isso é opcional — sem token configurado, o resto do servidor
 (ingest, busca, tools de material) funciona normalmente.
