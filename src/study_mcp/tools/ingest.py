@@ -1,4 +1,4 @@
-import uuid
+import hashlib
 from pathlib import Path
 
 from docling.datamodel.base_models import InputFormat
@@ -41,13 +41,26 @@ class IngestService:
 
     @staticmethod
     def _save_text(text: str, source_name: str) -> dict[str, str | int]:
-        material_id = str(uuid.uuid4())
-        chunks = chunk_text(text)
+        material_id = hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
+
+        # ponytail: dedup checks existing ids via list_materials() (a
+        # full scan) instead of a dedicated repository lookup - fine
+        # at personal-study scale. Ceiling: slows down with many
+        # materials. Upgrade path: repository.material_exists(id).
+        existing_ids = {m['material_id'] for m in repository.list_materials()}
+        if material_id in existing_ids:
+            return {
+                'status': 'already_indexed',
+                'material_id': material_id,
+            }
+
+        chunks, discarded = chunk_text(text)
         saved = repository.save_chunks(material_id, source_name, chunks)
         return {
             'material_id': material_id,
             'source': source_name,
             'chunks_saved': saved,
+            'chunks_discarded': discarded,
             'status': 'ok',
         }
 
