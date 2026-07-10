@@ -17,7 +17,10 @@ class EmbeddingEngine:
                 settings.EMBEDDING_MODEL
             )
         if self._model is None:
-            self._model = AutoModel.from_pretrained(settings.EMBEDDING_MODEL)
+            self._model = AutoModel.from_pretrained(
+                settings.EMBEDDING_MODEL,
+                device_map='auto',
+            )
             self._model.eval()
 
     @staticmethod

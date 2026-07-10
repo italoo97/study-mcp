@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,8 +28,9 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 64
 
     model_config = SettingsConfigDict(
-        env_file='.env',
+        env_file=Path('.env'),
         env_file_encoding='utf-8',
+        case_sensitive=True,
     )
 
 
