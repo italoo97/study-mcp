@@ -2,10 +2,51 @@ from notion_client import Client
 
 from study_mcp.core.config import settings
 
+_MAX_BLOCKS_PER_REQUEST = 100
+
 
 def _rich_text(text: str) -> list[dict[str, object]]:
     chunks = [text[i : i + 2000] for i in range(0, len(text), 2000)]
     return [{'type': 'text', 'text': {'content': c}} for c in chunks]
+
+
+def _paragraph_blocks(text: str) -> list[dict[str, object]]:
+    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+    return [
+        {
+            'type': 'paragraph',
+            'paragraph': {'rich_text': _rich_text(p)},
+        }
+        for p in paragraphs
+    ]
+
+
+def _flashcard_blocks(
+    flashcards: list[dict[str, str]],
+) -> list[dict[str, object]]:
+    return [
+        {
+            'type': 'toggle',
+            'toggle': {
+                'rich_text': _rich_text(fc['question']),
+                'children': [
+                    {
+                        'type': 'paragraph',
+                        'paragraph': {'rich_text': _rich_text(fc['answer'])},
+                    }
+                ],
+            },
+        }
+        for fc in flashcards
+    ]
+
+
+def _append_blocks_batched(
+    client: Client, page_id: str, blocks: list[dict[str, object]]
+) -> None:
+    for i in range(0, len(blocks), _MAX_BLOCKS_PER_REQUEST):
+        batch = blocks[i : i + _MAX_BLOCKS_PER_REQUEST]
+        client.blocks.children.append(block_id=page_id, children=batch)
 
 
 class NotionService:
@@ -15,7 +56,7 @@ class NotionService:
     def _get_client(self) -> Client:
         if self._client is None:
             if not settings.NOTION_TOKEN:
-                raise RuntimeError('NOTION_TOKEN is not set in .env')
+                raise RuntimeError('NOTION_TOKEN is not configured.')
             self._client = Client(auth=settings.NOTION_TOKEN)
         return self._client
 
@@ -27,7 +68,7 @@ class NotionService:
         tags: list[str] | None = None,
     ) -> dict[str, str]:
         if not settings.NOTION_DATABASE_ID:
-            return {'error': 'NOTION_DATABASE_ID is not set in .env'}
+            return {'error': 'NOTION_DATABASE_ID is not configured.'}
 
         client = self._get_client()
         properties: dict[str, object] = {
@@ -44,10 +85,18 @@ class NotionService:
                 'multi_select': [{'name': t} for t in tags],
             }
 
+        body_blocks = _paragraph_blocks(summary)
         page = client.pages.create(
             parent={'database_id': settings.NOTION_DATABASE_ID},
             properties=properties,
+            children=body_blocks[:_MAX_BLOCKS_PER_REQUEST],
         )
+        if len(body_blocks) > _MAX_BLOCKS_PER_REQUEST:
+            _append_blocks_batched(
+                client,
+                page['id'],  # type: ignore[index]
+                body_blocks[_MAX_BLOCKS_PER_REQUEST:],
+            )
 
         return {
             'status': 'ok',
@@ -61,7 +110,7 @@ class NotionService:
         flashcards: list[dict[str, str]],
     ) -> dict[str, str | int]:
         if not settings.NOTION_DATABASE_ID:
-            return {'error': 'NOTION_DATABASE_ID is not set in .env'}
+            return {'error': 'NOTION_DATABASE_ID is not configured.'}
 
         client = self._get_client()
         content = '\n\n'.join(
@@ -77,10 +126,18 @@ class NotionService:
             'Content': {'rich_text': _rich_text(content)},
         }
 
+        body_blocks = _flashcard_blocks(flashcards)
         page = client.pages.create(
             parent={'database_id': settings.NOTION_DATABASE_ID},
             properties=properties,
+            children=body_blocks[:_MAX_BLOCKS_PER_REQUEST],
         )
+        if len(body_blocks) > _MAX_BLOCKS_PER_REQUEST:
+            _append_blocks_batched(
+                client,
+                page['id'],  # type: ignore[index]
+                body_blocks[_MAX_BLOCKS_PER_REQUEST:],
+            )
 
         return {
             'status': 'ok',
