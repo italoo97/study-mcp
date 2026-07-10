@@ -13,6 +13,8 @@ class VectorRepository(Protocol):
         material_id: str,
         source_name: str,
         chunks: list[str],
+        source_type: str = 'material',
+        start_times: list[float | None] | None = None,
     ) -> int: ...
 
     def search_chunks(
@@ -20,7 +22,7 @@ class VectorRepository(Protocol):
         query: str,
         top_k: int = 5,
         material_id: str | None = None,
-    ) -> list[dict[str, str | float]]: ...
+    ) -> list[dict[str, str | float | None]]: ...
 
     def list_materials(self) -> list[dict[str, str]]: ...
 
@@ -28,7 +30,7 @@ class VectorRepository(Protocol):
 
     def get_chunks_by_material(
         self, material_id: str
-    ) -> list[dict[str, str | int]]: ...
+    ) -> list[dict[str, str | int | float | None]]: ...
 
 
 repository: Any

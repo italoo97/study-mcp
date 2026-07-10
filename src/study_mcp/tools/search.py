@@ -1,4 +1,9 @@
+import logging
+
+from study_mcp.core.config import settings
 from study_mcp.db import repository
+
+logger = logging.getLogger(__name__)
 
 
 class SearchService:
@@ -11,6 +16,12 @@ class SearchService:
         if not query.strip():
             return {'error': 'Query cannot be empty.'}
 
+        logger.info(
+            'Search: query=%r top_k=%d backend=%s',
+            query,
+            top_k,
+            settings.VECTOR_BACKEND,
+        )
         results = repository.search_chunks(
             query=query,
             top_k=top_k,

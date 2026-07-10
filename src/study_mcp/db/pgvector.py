@@ -32,16 +32,26 @@ class PgVectorRepository:
                     chunk_index   INTEGER     NOT NULL,
                     content       TEXT        NOT NULL,
                     embedding     vector({settings.EMBEDDING_DIM}),
+                    source_type   TEXT,
+                    start_time    REAL        NULL,
                     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
                 );
                 """
             )
             cur.execute(
+                'ALTER TABLE study_chunks '
+                'ADD COLUMN IF NOT EXISTS source_type TEXT;'
+            )
+            cur.execute(
+                'ALTER TABLE study_chunks '
+                'ADD COLUMN IF NOT EXISTS start_time REAL NULL;'
+            )
+            cur.execute('DROP INDEX IF EXISTS study_chunks_embedding_idx;')
+            cur.execute(
                 """
                 CREATE INDEX IF NOT EXISTS study_chunks_embedding_idx
                     ON study_chunks
-                    USING ivfflat (embedding vector_cosine_ops)
-                    WITH (lists = 100);
+                    USING hnsw (embedding vector_cosine_ops);
                 """
             )
             cur.execute(
@@ -56,9 +66,12 @@ class PgVectorRepository:
         material_id: str,
         source_name: str,
         chunks: list[str],
+        source_type: str = 'material',
+        start_times: list[float | None] | None = None,
     ) -> int:
         conn = self._get_conn()
         embeddings = embedding_engine.embed_texts(chunks)
+        times = start_times or [None] * len(chunks)
 
         rows = [
             (
@@ -68,6 +81,8 @@ class PgVectorRepository:
                 i,
                 chunk,
                 embedding,
+                source_type,
+                times[i],
             )
             for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
         ]
@@ -79,15 +94,18 @@ class PgVectorRepository:
                     """
                     INSERT INTO study_chunks (
                         id, material_id, source,
-                        chunk_index, content, embedding
+                        chunk_index, content, embedding,
+                        source_type, start_time
                     )
                     VALUES %s
                     ON CONFLICT (id) DO UPDATE
-                        SET content   = EXCLUDED.content,
-                            embedding = EXCLUDED.embedding
+                        SET content     = EXCLUDED.content,
+                            embedding   = EXCLUDED.embedding,
+                            source_type = EXCLUDED.source_type,
+                            start_time  = EXCLUDED.start_time
                     """,
                     rows,
-                    template='(%s, %s, %s, %s, %s, %s::vector)',
+                    template='(%s, %s, %s, %s, %s, %s::vector, %s, %s)',
                 )
         return len(chunks)
 
@@ -96,7 +114,7 @@ class PgVectorRepository:
         query: str,
         top_k: int = 5,
         material_id: str | None = None,
-    ) -> list[dict[str, str | float]]:
+    ) -> list[dict[str, str | float | None]]:
         conn = self._get_conn()
         query_embedding = embedding_engine.embed_query(query)
 
@@ -113,7 +131,8 @@ class PgVectorRepository:
         )
 
         sql = f"""
-            SELECT content, source, material_id,
+            SELECT content, source, material_id, source_type,
+                   start_time,
                    1 - (embedding <=> %s::vector) AS score
             FROM   study_chunks
             {where_clause}
@@ -130,6 +149,12 @@ class PgVectorRepository:
                 'text': str(r['content']),
                 'source': str(r['source']),
                 'material_id': str(r['material_id']),
+                'source_type': str(r['source_type']),
+                'start_time': (
+                    float(r['start_time'])
+                    if r['start_time'] is not None
+                    else None
+                ),
                 'score': round(float(r['score']), 4),
             }
             for r in rows
@@ -164,11 +189,12 @@ class PgVectorRepository:
 
     def get_chunks_by_material(
         self, material_id: str
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, str | int | float | None]]:
         conn = self._get_conn()
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                'SELECT content, source, chunk_index '
+                'SELECT content, source, chunk_index, '
+                '       source_type, start_time '
                 'FROM study_chunks '
                 'WHERE material_id = %s '
                 'ORDER BY chunk_index',
@@ -181,6 +207,12 @@ class PgVectorRepository:
                 'text': str(r['content']),
                 'source': str(r['source']),
                 'chunk_index': int(r['chunk_index']),
+                'source_type': str(r['source_type']),
+                'start_time': (
+                    float(r['start_time'])
+                    if r['start_time'] is not None
+                    else None
+                ),
             }
             for r in rows
         ]

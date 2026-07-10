@@ -1,4 +1,6 @@
 import json
+import logging
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -16,6 +18,13 @@ from study_mcp.tools.materials import (
 )
 from study_mcp.tools.notion import save_flashcards_tool, save_summary_tool
 from study_mcp.tools.search import search_tool
+
+logging.basicConfig(
+    level=logging.WARNING,
+    stream=sys.stderr,
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+)
+logging.getLogger('study_mcp').setLevel(logging.INFO)
 
 
 @asynccontextmanager

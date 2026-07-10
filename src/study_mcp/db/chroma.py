@@ -31,6 +31,8 @@ class ChromaRepository:
         material_id: str,
         source_name: str,
         chunks: list[str],
+        source_type: str = 'material',
+        start_times: list[float | None] | None = None,
     ) -> int:
         collection = self._get_collection()
         embeddings = np.array(
@@ -43,6 +45,8 @@ class ChromaRepository:
                 'material_id': material_id,
                 'source': source_name,
                 'chunk_index': i,
+                'source_type': source_type,
+                'start_time': start_times[i] if start_times else None,
             }
             for i in range(len(chunks))
         ]
@@ -60,7 +64,7 @@ class ChromaRepository:
         query: str,
         top_k: int = 5,
         material_id: str | None = None,
-    ) -> list[dict[str, str | float]]:
+    ) -> list[dict[str, str | float | None]]:
         collection = self._get_collection()
         query_embedding = np.array(
             [embedding_engine.embed_query(query)], dtype=np.float32
@@ -83,16 +87,21 @@ class ChromaRepository:
         if documents is None or metadatas is None or distances is None:
             return []
 
-        hits: list[dict[str, str | float]] = []
+        hits: list[dict[str, str | float | None]] = []
         for doc, meta, dist in zip(
             documents[0],
             metadatas[0],
             distances[0],
         ):
+            start_time = meta.get('start_time')
             hits.append({
                 'text': doc,
                 'source': str(meta.get('source', '')),
                 'material_id': str(meta.get('material_id', '')),
+                'source_type': str(meta.get('source_type', '')),
+                'start_time': (
+                    start_time if isinstance(start_time, float) else None
+                ),
                 'score': round(1 - float(dist), 4),
             })
         return hits
@@ -126,7 +135,7 @@ class ChromaRepository:
 
     def get_chunks_by_material(
         self, material_id: str
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, str | int | float | None]]:
         collection = self._get_collection()
         where: Where = {'material_id': material_id}
         results = collection.get(
@@ -139,16 +148,24 @@ class ChromaRepository:
         if documents is None or metadatas is None:
             return []
 
-        chunks: list[dict[str, str | int]] = [
-            {
-                'text': doc,
-                'source': str(meta.get('source', '')),
-                'chunk_index': int(meta.get('chunk_index', 0)),  # type: ignore[arg-type]
-            }
-            for doc, meta in zip(documents, metadatas)
-        ]
-        chunks.sort(key=lambda c: int(c['chunk_index']))
-        return chunks
+        indexed: list[tuple[int, dict[str, str | int | float | None]]] = []
+        for doc, meta in zip(documents, metadatas):
+            idx = int(meta.get('chunk_index', 0))  # type: ignore[arg-type]
+            start_time = meta.get('start_time')
+            indexed.append((
+                idx,
+                {
+                    'text': doc,
+                    'source': str(meta.get('source', '')),
+                    'chunk_index': idx,
+                    'source_type': str(meta.get('source_type', '')),
+                    'start_time': (
+                        start_time if isinstance(start_time, float) else None
+                    ),
+                },
+            ))
+        indexed.sort(key=lambda pair: pair[0])
+        return [c for _, c in indexed]
 
 
 chroma_repository = ChromaRepository()

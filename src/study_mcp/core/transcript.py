@@ -57,10 +57,6 @@ def parse_transcript(raw: str) -> str:
 
     Groups consecutive cues into a paragraph until a pause longer than
     MAX_PAUSE_SECONDS or MAX_LINES_PER_PARAGRAPH cues is reached.
-    # ponytail: start_time is embedded as a '[mm:ss]' text prefix instead
-    # of structured chunk metadata, since VectorRepository has no field
-    # for it yet. Upgrade path: Fase 5.1 adds start_time to pgvector and
-    # this should thread it through save_chunks/search_chunks instead.
     """
     cues = _parse_cues(raw)
     if not cues:
@@ -94,3 +90,25 @@ def parse_transcript(raw: str) -> str:
         )
 
     return '\n\n'.join(paragraphs)
+
+
+_LEADING_TIMESTAMP_RE = re.compile(r'^\[(\d{2}):(\d{2})(?::(\d{2}))?\]')
+
+
+def extract_start_time(chunk: str) -> float | None:
+    """Parse a leading '[mm:ss]' or '[hh:mm:ss]' marker into seconds.
+
+    Only chunks that begin exactly at a parsed paragraph boundary carry
+    the marker (see parse_transcript) - chunks split further by
+    chunk_text's sentence-grouping (when a paragraph exceeds
+    CHUNK_SIZE) won't have one, and this returns None for those.
+    """
+    match = _LEADING_TIMESTAMP_RE.match(chunk)
+    if not match:
+        return None
+    first, second, third = match.groups()
+    if third is not None:
+        hours, minutes, seconds = int(first), int(second), int(third)
+    else:
+        hours, minutes, seconds = 0, int(first), int(second)
+    return float(hours * 3600 + minutes * 60 + seconds)
