@@ -1,8 +1,16 @@
+import re
+
 from notion_client import Client
 
 from study_mcp.core.config import settings
 
 _MAX_BLOCKS_PER_REQUEST = 100
+
+_BOLD_RE = re.compile(r'\*\*(.+?)\*\*')
+_HEADING_RE = re.compile(r'^(#{1,3})\s+(.*)$')
+_BULLET_RE = re.compile(r'^[-*]\s+(.*)$')
+_NUMBERED_RE = re.compile(r'^\d+\.\s+(.*)$')
+_HEADING_TYPES = {1: 'heading_1', 2: 'heading_2', 3: 'heading_3'}
 
 
 def _rich_text(text: str) -> list[dict[str, object]]:
@@ -10,15 +18,71 @@ def _rich_text(text: str) -> list[dict[str, object]]:
     return [{'type': 'text', 'text': {'content': c}} for c in chunks]
 
 
-def _paragraph_blocks(text: str) -> list[dict[str, object]]:
-    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
-    return [
-        {
-            'type': 'paragraph',
-            'paragraph': {'rich_text': _rich_text(p)},
-        }
-        for p in paragraphs
-    ]
+def _text_span(content: str, bold: bool = False) -> dict[str, object]:
+    span: dict[str, object] = {'type': 'text', 'text': {'content': content}}
+    if bold:
+        span['annotations'] = {'bold': True}
+    return span
+
+
+def _inline_rich_text(text: str) -> list[dict[str, object]]:
+    # NOTE: only handles **bold** inline - no italics/links/code. Also
+    # doesn't chunk past 2000 chars like _rich_text does, since a
+    # single markdown line that long is not a realistic summary case.
+    spans: list[dict[str, object]] = []
+    last = 0
+    for match in _BOLD_RE.finditer(text):
+        if match.start() > last:
+            spans.append(_text_span(text[last : match.start()]))
+        spans.append(_text_span(match.group(1), bold=True))
+        last = match.end()
+    if last < len(text):
+        spans.append(_text_span(text[last:]))
+    return spans or [_text_span('')]
+
+
+def _markdown_blocks(text: str) -> list[dict[str, object]]:
+    """Render #/##/### headings, -/* bullets, 1. numbered lists and
+    **bold** as real Notion blocks instead of flat paragraphs showing
+    the raw markdown syntax. Assumes one logical line per paragraph
+    (typical of LLM-generated markdown), not hand-wrapped prose.
+    """
+    blocks: list[dict[str, object]] = []
+    for raw_line in text.split('\n'):
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        heading = _HEADING_RE.match(line)
+        bullet = _BULLET_RE.match(line)
+        numbered = _NUMBERED_RE.match(line)
+
+        if heading:
+            block_type = _HEADING_TYPES[len(heading.group(1))]
+            blocks.append({
+                'type': block_type,
+                block_type: {'rich_text': _inline_rich_text(heading.group(2))},
+            })
+        elif bullet:
+            blocks.append({
+                'type': 'bulleted_list_item',
+                'bulleted_list_item': {
+                    'rich_text': _inline_rich_text(bullet.group(1))
+                },
+            })
+        elif numbered:
+            blocks.append({
+                'type': 'numbered_list_item',
+                'numbered_list_item': {
+                    'rich_text': _inline_rich_text(numbered.group(1))
+                },
+            })
+        else:
+            blocks.append({
+                'type': 'paragraph',
+                'paragraph': {'rich_text': _inline_rich_text(line)},
+            })
+    return blocks
 
 
 def _flashcard_blocks(
@@ -188,9 +252,7 @@ class NotionService:
 
         client = self._get_client()
         properties: dict[str, object] = {
-            'Name': {
-                'title': _rich_text(f'Summary — {material_name}'),
-            },
+            'Name': {'title': _rich_text(material_name)},
             'Type': {'select': {'name': 'Summary'}},
             'Material': {'rich_text': _rich_text(material_id)},
         }
@@ -200,7 +262,15 @@ class NotionService:
                 'multi_select': [{'name': t} for t in tags],
             }
 
-        body_blocks = _paragraph_blocks(summary)
+        header: dict[str, object] = {
+            'type': 'callout',
+            'callout': {
+                'rich_text': _rich_text(f'Resumo de {material_name}'),
+                'icon': {'type': 'emoji', 'emoji': '📚'},
+                'color': 'blue_background',
+            },
+        }
+        body_blocks = [header, *_markdown_blocks(summary)]
         page = client.pages.create(
             parent={'database_id': settings.NOTION_DATABASE_ID},
             properties=properties,
@@ -234,9 +304,7 @@ class NotionService:
 
         client = self._get_client()
         properties: dict[str, object] = {
-            'Name': {
-                'title': _rich_text(f'Flashcards — {material_name}'),
-            },
+            'Name': {'title': _rich_text(material_name)},
             'Type': {'select': {'name': 'Flashcards'}},
             'Material': {'rich_text': _rich_text(material_id)},
         }
@@ -271,9 +339,7 @@ class NotionService:
 
         client = self._get_client()
         properties: dict[str, object] = {
-            'Name': {
-                'title': _rich_text(f'Quiz — {material_name}'),
-            },
+            'Name': {'title': _rich_text(material_name)},
             'Type': {'select': {'name': 'Quiz'}},
             'Material': {'rich_text': _rich_text(material_id)},
         }
