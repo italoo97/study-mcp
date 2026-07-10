@@ -14,7 +14,42 @@ class PgVectorRepository:
         if self._conn is None or self._conn.closed:
             self._conn = psycopg2.connect(settings.DATABASE_URL)
             self._conn.autocommit = True
+            self._ensure_table()
         return self._conn
+
+    def _ensure_table(self) -> None:
+        conn = self._conn
+        if conn is None:
+            return
+        with conn.cursor() as cur:
+            cur.execute('CREATE EXTENSION IF NOT EXISTS vector;')
+            cur.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS study_chunks (
+                    id            TEXT PRIMARY KEY,
+                    material_id   TEXT        NOT NULL,
+                    source        TEXT        NOT NULL,
+                    chunk_index   INTEGER     NOT NULL,
+                    content       TEXT        NOT NULL,
+                    embedding     vector({settings.EMBEDDING_DIM}),
+                    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+                );
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS study_chunks_embedding_idx
+                    ON study_chunks
+                    USING ivfflat (embedding vector_cosine_ops)
+                    WITH (lists = 100);
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS study_chunks_material_idx
+                    ON study_chunks (material_id);
+                """
+            )
 
     def save_chunks(
         self,

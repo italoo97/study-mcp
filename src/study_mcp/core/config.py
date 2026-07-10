@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -9,14 +8,11 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = 'intfloat/multilingual-e5-small'
     EMBEDDING_DIM: int = 384
 
-    # Vector backend
-    VECTOR_BACKEND: Literal['chroma', 'pgvector'] = 'chroma'
-
     # ChromaDB
     CHROMA_PATH: str = './chroma_db'
     CHROMA_COLLECTION: str = 'study_chunks'
 
-    # pgvector
+    # pgvector / Supabase — if set, pgvector is used automatically
     DATABASE_URL: str = ''
 
     # Notion
@@ -26,6 +22,10 @@ class Settings(BaseSettings):
     # Chunking
     CHUNK_SIZE: int = 512
     CHUNK_OVERLAP: int = 64
+
+    @property
+    def VECTOR_BACKEND(self) -> str:
+        return 'pgvector' if self.DATABASE_URL else 'chroma'
 
     model_config = SettingsConfigDict(
         env_file=Path('.env'),

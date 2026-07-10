@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "study-mcp": {
+      "command": "poetry",
+      "args": [
+        "--directory",
+        "/ABSOLUTE/PATH/TO/study-mcp",
+        "run",
+        "python",
+        "-m",
+        "study_mcp.server"
+      ],
+      "env": {
+        "EMBEDDING_MODEL": "intfloat/multilingual-e5-small",
+        "EMBEDDING_DIM": "384",
+        "CHROMA_PATH": "./chroma_db",
+        "CHROMA_COLLECTION": "study_chunks",
+        "CHUNK_SIZE": "512",
+        "CHUNK_OVERLAP": "64",
+        "NOTION_TOKEN": "secret_...",
+        "NOTION_DATABASE_ID": "your-database-id-here",
+        "DATABASE_URL": ""
+      }
+    }
+  }
+}
