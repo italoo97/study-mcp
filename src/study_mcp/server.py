@@ -46,7 +46,18 @@ mcp = FastMCP(
         'flashcards and interactive Notion quizzes the user can '
         'answer directly in Notion. '
         'Always call list_materials_tool first to check what is already '
-        'indexed before ingesting new files.'
+        'indexed before ingesting new files. '
+        'After saving a summary with save_summary_tool, always ask '
+        'the user whether they would also like flashcards '
+        '(save_flashcards_tool) and/or an interactive quiz '
+        '(create_quiz_tool) generated for the same material - offer, '
+        "don't create them unprompted. "
+        'When it fits the conversation, remind the user what else '
+        'this server can do: search_tool for semantic search across '
+        'everything ingested, get_material_overview_tool to preview '
+        'a material before summarizing, study_stats_tool for a study '
+        'dashboard, and delete_material_tool to remove outdated '
+        'materials.'
     ),
     lifespan=app_lifespan,
 )
@@ -84,7 +95,9 @@ def study_prompt(material_name: str) -> str:
         '1. Searching for the main topics using search_tool\n'
         '2. Generating a structured summary\n'
         '3. Creating 10 flashcards covering the key concepts\n'
-        '4. Saving both the summary and flashcards to Notion'
+        '4. Saving both the summary and flashcards to Notion\n'
+        '5. Asking if I would also like an interactive quiz '
+        '(create_quiz_tool) to test myself on this material'
     )
 
 

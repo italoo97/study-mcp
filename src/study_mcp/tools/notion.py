@@ -216,6 +216,11 @@ class NotionService:
         return {
             'status': 'ok',
             'notion_url': str(page['url']),  # type: ignore[index]
+            'suggestion': (
+                'Ask the user if they would also like flashcards '
+                '(save_flashcards_tool) and/or an interactive quiz '
+                '(create_quiz_tool) generated for this same material.'
+            ),
         }
 
     def save_flashcards(
@@ -304,6 +309,11 @@ def save_summary_tool(
 ) -> dict[str, str]:
     """
     Save a study summary to Notion.
+
+    After a successful save, offer to also generate flashcards
+    (save_flashcards_tool) and/or an interactive quiz
+    (create_quiz_tool) for the same material - ask the user first,
+    don't create them unprompted.
 
     Args:
         material_id: ID of the ingested material.
