@@ -76,11 +76,18 @@ class ChromaRepository:
             include=['documents', 'metadatas', 'distances'],
         )
 
+        documents = results['documents']
+        metadatas = results['metadatas']
+        distances = results['distances']
+
+        if documents is None or metadatas is None or distances is None:
+            return []
+
         hits: list[dict[str, str | float]] = []
         for doc, meta, dist in zip(
-            results['documents'][0],  # type: ignore[index]
-            results['metadatas'][0],  # type: ignore[index]
-            results['distances'][0],  # type: ignore[index]
+            documents[0],
+            metadatas[0],
+            distances[0],
         ):
             hits.append({
                 'text': doc,
@@ -94,8 +101,12 @@ class ChromaRepository:
         collection = self._get_collection()
         results = collection.get(include=['metadatas'])
 
+        raw_metadatas = results['metadatas']
+        if raw_metadatas is None:
+            return []
+
         seen: dict[str, dict[str, str]] = {}
-        for meta in results['metadatas']:  # type: ignore[union-attr]
+        for meta in raw_metadatas:
             mid = str(meta.get('material_id', ''))
             if mid and mid not in seen:
                 seen[mid] = {
