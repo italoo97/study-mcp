@@ -41,18 +41,6 @@ def _flashcard_blocks(
     ]
 
 
-def _quiz_content_text(questions: list[dict[str, object]]) -> str:
-    lines: list[str] = []
-    for i, q in enumerate(questions, start=1):
-        lines.append(f"Q{i}: {q['question']}")
-        raw_options = q.get('options')
-        if isinstance(raw_options, list):
-            for opt in raw_options:
-                lines.append(f'  - {opt}')
-        lines.append(f"A{i}: {q['answer']}")
-    return '\n'.join(lines)
-
-
 def _question_blocks(
     index: int, q: dict[str, object]
 ) -> list[dict[str, object]]:
@@ -205,7 +193,6 @@ class NotionService:
             },
             'Type': {'select': {'name': 'Summary'}},
             'Material': {'rich_text': _rich_text(material_id)},
-            'Content': {'rich_text': _rich_text(summary)},
         }
 
         if tags:
@@ -241,17 +228,12 @@ class NotionService:
             return {'error': 'NOTION_DATABASE_ID is not configured.'}
 
         client = self._get_client()
-        content = '\n\n'.join(
-            f"Q: {fc['question']}\nA: {fc['answer']}" for fc in flashcards
-        )
-
         properties: dict[str, object] = {
             'Name': {
                 'title': _rich_text(f'Flashcards — {material_name}'),
             },
             'Type': {'select': {'name': 'Flashcards'}},
             'Material': {'rich_text': _rich_text(material_id)},
-            'Content': {'rich_text': _rich_text(content)},
         }
 
         body_blocks = _flashcard_blocks(flashcards)
@@ -289,9 +271,6 @@ class NotionService:
             },
             'Type': {'select': {'name': 'Quiz'}},
             'Material': {'rich_text': _rich_text(material_id)},
-            'Content': {
-                'rich_text': _rich_text(_quiz_content_text(questions))
-            },
         }
 
         body_blocks = _quiz_blocks(questions)

@@ -55,8 +55,11 @@ exatas (nome e tipo têm que bater, são case-sensitive):
 | `Name` | Title | Sim (já vem criada por padrão) |
 | `Type` | Select | Sim |
 | `Material` | Text | Sim |
-| `Content` | Text | Sim |
 | `Tags` | Multi-select | Opcional (só usada em `save_summary_tool` se você passar tags) |
+
+O conteúdo em si (resumo, flashcards, quiz) fica só no **corpo da
+página**, formatado em blocos — não existe uma propriedade `Content`
+duplicando esse texto.
 
 Depois, compartilhe o database com a integração: abra o database →
 `•••` no canto superior direito → **"Connections"** → selecione a

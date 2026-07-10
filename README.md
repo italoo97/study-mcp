@@ -186,8 +186,8 @@ Quick version:
    `poetry run python scripts/create_notion_database.py <parent_page_id>`
    (creates it with the right schema and shares it automatically), or
    create it by hand with these properties: `Name` (Title), `Type`
-   (Select), `Material` (Rich text), `Content` (Rich text), `Tags`
-   (Multi-select) — then share it with your integration manually.
+   (Select), `Material` (Rich text), `Tags` (Multi-select) — then
+   share it with your integration manually.
 3. Set `NOTION_TOKEN` and `NOTION_DATABASE_ID` in the `env` block of
    your Claude Desktop config (**not** `.env` — see
    [`docs/claude_desktop_config.json`](docs/claude_desktop_config.json)).

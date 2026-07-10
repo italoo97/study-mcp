@@ -28,7 +28,6 @@ _SCHEMA: dict[str, object] = {
         }
     },
     'Material': {'rich_text': {}},
-    'Content': {'rich_text': {}},
     'Tags': {'multi_select': {}},
 }
 
