@@ -49,6 +49,16 @@ def test_ingest_text_dedup_returns_already_indexed() -> None:
     assert first['status'] == 'ok'
     assert second['status'] == 'already_indexed'
     assert second['material_id'] == first['material_id']
+    assert second['source'] == 'Second Name'
+
+
+def test_ingest_text_rejects_invalid_source_type() -> None:
+    result = ingest.ingest_text_tool(
+        'some text', 'Some Name', source_type='invalid-type'
+    )
+    error = result.get('error')
+    assert isinstance(error, str)
+    assert 'invalid-type' in error
 
 
 def test_ingest_file_missing_returns_error() -> None:
@@ -100,5 +110,6 @@ def test_ingest_file_extraction_error_returns_error_dict(
     )
 
     result = ingest.ingest_file_tool(str(file_path))
-    assert 'error' in result
-    assert 'broken.pdf' in result['error']
+    error = result.get('error')
+    assert isinstance(error, str)
+    assert 'broken.pdf' in error

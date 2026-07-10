@@ -167,5 +167,24 @@ class ChromaRepository:
         indexed.sort(key=lambda pair: pair[0])
         return [c for _, c in indexed]
 
+    def material_exists(self, material_id: str) -> bool:
+        collection = self._get_collection()
+        existing = collection.get(ids=[f'{material_id}_0'], include=[])
+        return bool(existing['ids'])
+
+    def count_chunks_by_material(self) -> dict[str, int]:
+        collection = self._get_collection()
+        results = collection.get(include=['metadatas'])
+        raw_metadatas = results['metadatas']
+        if raw_metadatas is None:
+            return {}
+
+        counts: dict[str, int] = {}
+        for meta in raw_metadatas:
+            mid = str(meta.get('material_id', ''))
+            if mid:
+                counts[mid] = counts.get(mid, 0) + 1
+        return counts
+
 
 chroma_repository = ChromaRepository()

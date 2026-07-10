@@ -29,7 +29,7 @@ logging.getLogger('study_mcp').setLevel(logging.INFO)
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP[None]) -> AsyncIterator[None]:
-    embedding_engine._load_model()
+    embedding_engine.load()
     yield
 
 

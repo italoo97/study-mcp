@@ -46,7 +46,15 @@ class PgVectorRepository:
                 'ALTER TABLE study_chunks '
                 'ADD COLUMN IF NOT EXISTS start_time REAL NULL;'
             )
-            cur.execute('DROP INDEX IF EXISTS study_chunks_embedding_idx;')
+
+            cur.execute(
+                'SELECT indexdef FROM pg_indexes '
+                "WHERE indexname = 'study_chunks_embedding_idx'"
+            )
+            existing_index = cur.fetchone()
+            if existing_index and 'ivfflat' in existing_index[0]:
+                cur.execute('DROP INDEX study_chunks_embedding_idx;')
+
             cur.execute(
                 """
                 CREATE INDEX IF NOT EXISTS study_chunks_embedding_idx
@@ -216,6 +224,26 @@ class PgVectorRepository:
             }
             for r in rows
         ]
+
+    def material_exists(self, material_id: str) -> bool:
+        conn = self._get_conn()
+        with conn.cursor() as cur:
+            cur.execute(
+                'SELECT 1 FROM study_chunks WHERE id = %s LIMIT 1',
+                (f'{material_id}_0',),
+            )
+            return cur.fetchone() is not None
+
+    def count_chunks_by_material(self) -> dict[str, int]:
+        conn = self._get_conn()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                'SELECT material_id, COUNT(*) AS chunks '
+                'FROM study_chunks '
+                'GROUP BY material_id'
+            )
+            rows = cur.fetchall()
+        return {str(r['material_id']): int(r['chunks']) for r in rows}
 
 
 pgvector_repository = PgVectorRepository()

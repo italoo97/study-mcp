@@ -62,6 +62,12 @@ class FakeRepository:
     def get_chunks_by_material(self, material_id: str) -> list[dict[str, Any]]:
         return list(self.chunks.get(material_id, []))
 
+    def material_exists(self, material_id: str) -> bool:
+        return material_id in self.chunks
+
+    def count_chunks_by_material(self) -> dict[str, int]:
+        return {mid: len(chunks) for mid, chunks in self.chunks.items()}
+
 
 @pytest.fixture()
 def fake_repository() -> FakeRepository:

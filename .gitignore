@@ -32,3 +32,9 @@ dist/
 .DS_Store
 
 chroma_db/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# graphify output
+graphify-out/

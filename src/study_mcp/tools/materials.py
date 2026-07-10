@@ -66,10 +66,6 @@ def generate_quiz_context_tool(
     if len(chunks) <= num_topics:
         sampled = chunks
     else:
-        # ponytail: evenly-spaced index sampling, not topic-aware -
-        # good enough since chunks are already sequential by content.
-        # Ceiling: could sample near-duplicate topics on repetitive
-        # material. Upgrade path: cluster chunk embeddings instead.
         step = len(chunks) / num_topics
         indices = sorted({int(i * step) for i in range(num_topics)})
         sampled = [chunks[i] for i in indices]
@@ -91,20 +87,19 @@ def study_stats_tool() -> dict[str, object]:
         chunks_per_material (a list of {material_id, source, chunks}).
     """
     materials = repository.list_materials()
-    per_material = []
-    total_chunks = 0
+    counts = repository.count_chunks_by_material()
 
-    for material in materials:
-        chunks = repository.get_chunks_by_material(material['material_id'])
-        total_chunks += len(chunks)
-        per_material.append({
-            'material_id': material['material_id'],
-            'source': material['source'],
-            'chunks': len(chunks),
-        })
+    per_material = [
+        {
+            'material_id': m['material_id'],
+            'source': m['source'],
+            'chunks': counts.get(m['material_id'], 0),
+        }
+        for m in materials
+    ]
 
     return {
         'total_materials': len(materials),
-        'total_chunks': total_chunks,
+        'total_chunks': sum(counts.values()),
         'chunks_per_material': per_material,
     }

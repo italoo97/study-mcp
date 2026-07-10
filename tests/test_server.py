@@ -3,6 +3,7 @@ import json
 
 import pytest
 from study_mcp import server
+from study_mcp.core.embeddings import embedding_engine
 
 from tests.conftest import FakeRepository
 
@@ -29,8 +30,8 @@ def test_app_lifespan_loads_embedding_model(
 ) -> None:
     calls: list[bool] = []
     monkeypatch.setattr(
-        server.embedding_engine,
-        '_load_model',
+        embedding_engine,
+        'load',
         lambda: calls.append(True),
     )
 

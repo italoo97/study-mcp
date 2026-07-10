@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 _DIRECT_TEXT_SUFFIXES = {'.txt', '.md'}
 _TRANSCRIPT_SUFFIXES = {'.srt', '.vtt'}
+_VALID_SOURCE_TYPES = {'transcript', 'notes', 'article'}
 
 
 class IngestService:
@@ -49,12 +50,12 @@ class IngestService:
     ) -> dict[str, str | int]:
         material_id = hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
 
-        existing_ids = {m['material_id'] for m in repository.list_materials()}
-        if material_id in existing_ids:
+        if repository.material_exists(material_id):
             logger.info('Material already indexed: %s', source_name)
             return {
                 'status': 'already_indexed',
                 'material_id': material_id,
+                'source': source_name,
             }
 
         started = time.perf_counter()
@@ -160,4 +161,11 @@ def ingest_text_tool(
     Returns:
         dict with material_id, source, chunks_saved and status.
     """
+    if source_type not in _VALID_SOURCE_TYPES:
+        return {
+            'error': (
+                f"Invalid source_type '{source_type}'. Must be one of: "
+                f'{sorted(_VALID_SOURCE_TYPES)}.'
+            )
+        }
     return ingest_service.ingest_text(text, material_name, source_type)

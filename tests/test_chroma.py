@@ -106,3 +106,22 @@ def test_delete_material_missing_returns_zero(
     repo: ChromaRepository,
 ) -> None:
     assert repo.delete_material('does-not-exist') == 0
+
+
+def test_material_exists(repo: ChromaRepository) -> None:
+    repo.save_chunks('mat-1', 'Material One', ['a', 'b'])
+    assert repo.material_exists('mat-1') is True
+    assert repo.material_exists('does-not-exist') is False
+
+
+def test_count_chunks_by_material(repo: ChromaRepository) -> None:
+    repo.save_chunks('mat-1', 'Material One', ['a', 'b', 'c'])
+    repo.save_chunks('mat-2', 'Material Two', ['d'])
+
+    counts = repo.count_chunks_by_material()
+
+    assert counts == {'mat-1': 3, 'mat-2': 1}
+
+
+def test_count_chunks_by_material_empty(repo: ChromaRepository) -> None:
+    assert repo.count_chunks_by_material() == {}

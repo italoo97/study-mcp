@@ -17,10 +17,6 @@ def _split_into_paragraphs(text: str) -> list[str]:
 
 
 def _split_into_sentences(text: str) -> list[str]:
-    # ponytail: naive punctuation split, doesn't handle abbreviations
-    # (e.g. "Dr. Smith" splits in two). Ceiling: occasional over-split.
-    # Upgrade path: a real sentence tokenizer (nltk/spacy) if search
-    # quality suffers because of it.
     sentences = _SENTENCE_RE.split(text.strip())
     return [s.strip() for s in sentences if s.strip()]
 

@@ -32,6 +32,10 @@ class VectorRepository(Protocol):
         self, material_id: str
     ) -> list[dict[str, str | int | float | None]]: ...
 
+    def material_exists(self, material_id: str) -> bool: ...
+
+    def count_chunks_by_material(self) -> dict[str, int]: ...
+
 
 repository: Any
 
