@@ -1,8 +1,8 @@
 import json
-from collections.abc import AsyncGenerator
-from typing import Any
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
-from fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP
 
 from study_mcp.core.embeddings import embedding_engine
 from study_mcp.db import repository
@@ -13,7 +13,8 @@ from study_mcp.tools.notion import save_flashcards_tool, save_summary_tool
 from study_mcp.tools.search import search_tool
 
 
-async def app_lifespan(server: Any) -> AsyncGenerator[None, None]:
+@asynccontextmanager
+async def app_lifespan(server: FastMCP[None]) -> AsyncIterator[None]:
     embedding_engine._load_model()
     yield
 
@@ -47,7 +48,7 @@ def materials_resource() -> str:
     return json.dumps(materials, ensure_ascii=False, indent=2)
 
 
-@mcp.prompt
+@mcp.prompt()
 def study_prompt(material_name: str) -> str:
     """
     Generate a study plan prompt for a given material.

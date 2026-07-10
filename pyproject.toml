@@ -85,10 +85,6 @@ plugins = ["pydantic.mypy"]
 module = ["pydantic_settings.*"]
 disallow_subclassing_any = false
 
-[[tool.mypy.overrides]]
-module = ["study_mcp.server"]
-ignore_errors = true
-
 [tool.commitizen]
 name = "cz_conventional_commits"
 tag_format = "v$version"
