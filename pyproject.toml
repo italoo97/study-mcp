@@ -14,7 +14,8 @@ dependencies = [
     "chromadb (>=1.5.9,<2.0.0)",
     "psycopg2-binary (>=2.9.12,<3.0.0)",
     "docling (>=2.111.0,<3.0.0)",
-    "notion-client (>=3.1.0,<4.0.0)"
+    "notion-client (>=3.1.0,<4.0.0)",
+    "mcp[cli] (>=1.28.1,<2.0.0)"
 ]
 
 [tool.poetry]
@@ -82,7 +83,10 @@ plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 module = ["pydantic_settings.*"]
-ignore_missing_imports = true
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = ["study_mcp.server"]
 ignore_errors = true
 
 [tool.commitizen]
